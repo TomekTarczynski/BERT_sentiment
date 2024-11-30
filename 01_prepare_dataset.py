@@ -42,7 +42,7 @@ dataset = dataset.map(lambda row, dict_trans: {"text": row["text"].translate(dic
 
 dataset = dataset.map(lambda row: {"len_text": len(row['text'])}, num_proc=num_proc)
 dataset = dataset.filter(lambda row: (row['len_text'] < max_chars) & (row['len_text'] >= min_chars), num_proc=num_proc)
-dataset = dataset.map(lambda row, tokenizer: tokenizer(row['text'], padding=True, truncation=True), batched=False, fn_kwargs={"tokenizer": tokenizer}, num_proc=num_proc)
+dataset = dataset.map(lambda row, tokenizer: tokenizer(row['text'], padding="max_length", truncation=True,max_length=128), batched=False, fn_kwargs={"tokenizer": tokenizer}, num_proc=num_proc)
 dataset = dataset.map(lambda row: {'n_tokens': len(row['input_ids'])}, num_proc=num_proc)
 dataset = dataset.filter(lambda row: row['n_tokens'] <= max_tokens, num_proc=num_proc)
 dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
