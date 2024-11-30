@@ -27,7 +27,7 @@ tokenizer = DistilBertTokenizerFast.from_pretrained("distilbert-base-uncased")
 # PREPROCESSING #
 #################
 
-dataset = dataset.map(lambda row: {**row, "sentiment": "Positive" if row["rating"] >= 4 else "Neutral" if row["rating"] == 3 else "Negative"}, num_proc=num_proc)
+dataset = dataset.map(lambda row: {**row, "labels": 2 if row["rating"] >= 4 else 1 if row["rating"] == 3 else 0}, num_proc=num_proc)
 dataset = dataset.map(lambda row: {"text": row["text"].lower()}, num_proc=num_proc)
 dataset = dataset.remove_columns(['title', 'images', 'asin', 'parent_asin', 'user_id', 'timestamp', 'helpful_vote', 'verified_purchase'])
 
@@ -43,10 +43,9 @@ dataset = dataset.map(lambda row, dict_trans: {"text": row["text"].translate(dic
 dataset = dataset.map(lambda row: {"len_text": len(row['text'])}, num_proc=num_proc)
 dataset = dataset.filter(lambda row: (row['len_text'] < max_chars) & (row['len_text'] >= min_chars), num_proc=num_proc)
 dataset = dataset.map(lambda row, tokenizer: tokenizer(row['text'], padding=True, truncation=True), batched=False, fn_kwargs={"tokenizer": tokenizer}, num_proc=num_proc)
-dataset = dataset.remove_columns(['attention_mask'])
-dataset = dataset.rename_columns({'input_ids': "tokens"})
-dataset = dataset.map(lambda row: {'n_tokens': len(row['tokens'])}, num_proc=num_proc)
+dataset = dataset.map(lambda row: {'n_tokens': len(row['input_ids'])}, num_proc=num_proc)
 dataset = dataset.filter(lambda row: row['n_tokens'] <= max_tokens, num_proc=num_proc)
+dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
 ##################
 # SPLIT AND SAVE #
