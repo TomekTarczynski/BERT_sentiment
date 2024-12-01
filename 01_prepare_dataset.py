@@ -2,7 +2,25 @@ from datasets import load_dataset
 from collections import Counter
 from transformers import DistilBertModel, DistilBertTokenizerFast
 import torch
+import argparse
+
+
 assert torch.cuda.is_available() == True
+
+##################
+# READ ARGUMENTS #
+##################
+
+parser = argparse.ArgumentParser(description="Process command-line arguments.")
+
+parser.add_argument("--num_proc", type=int, default=7, help="Number of processes to use (default: 7).")
+parser.add_argument("--num_obs", type=int, default=100000, help="Number of observations to process (default: 100000).")
+
+args = parser.parse_args()
+
+num_proc = args.num_proc
+num_obs = args.num_obs
+
 
 ############
 # SETTINGS #
@@ -12,7 +30,7 @@ min_chars = 5 # Minimum number of chars in text to check sentiment
 max_chars = 400 # Maximum number of chars in text to check sentiment
 min_char_count = 100 # If character occurs lower number of times then it is removed
 max_tokens = 128 # Maximum number of tokens after tokenizing text
-num_proc = 7 # Number of processes during map
+
 
 ################
 # LOAD OBJECTS #
@@ -45,6 +63,8 @@ dataset = dataset.filter(lambda row: (row['len_text'] < max_chars) & (row['len_t
 dataset = dataset.map(lambda row, tokenizer: tokenizer(row['text'], padding="max_length", truncation=True,max_length=128), batched=False, fn_kwargs={"tokenizer": tokenizer}, num_proc=num_proc)
 dataset = dataset.map(lambda row: {'n_tokens': len(row['input_ids'])}, num_proc=num_proc)
 dataset = dataset.filter(lambda row: row['n_tokens'] <= max_tokens, num_proc=num_proc)
+if num_obs < len(dataset):
+    dataset = dataset.select(range(num_obs))
 dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
 ##################
