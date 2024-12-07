@@ -4,6 +4,8 @@ transformers==4.46.3
 accelerate
 tensorboard
 huggingface_hub
+fastapi
+uvicorn
 --extra-index-url https://download.pytorch.org/whl/cu124
 torch
 torchvision
